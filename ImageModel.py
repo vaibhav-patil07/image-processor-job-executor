@@ -1,4 +1,4 @@
-import psycopg2
+import psycopg
 from urllib.parse import urlparse, parse_qs
 
 
@@ -36,7 +36,7 @@ def get_pg_connection(db_url: str):
         conn_params["sslmode"] = query_params["sslmode"][0]
 
     # Create connection
-    conn = psycopg2.connect(**conn_params)
+    conn = psycopg.connect(**conn_params)
     return conn
 
 class ImageModel:
@@ -46,7 +46,7 @@ class ImageModel:
             self.conn = get_pg_connection(db_url)
             self.cursor = self.conn.cursor()
             print("Database connection established successfully")
-        except psycopg2.Error as e:
+        except psycopg.Error as e:
             print(f"Database connection error: {e}")
             raise e
 
