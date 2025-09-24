@@ -8,6 +8,8 @@ from config import Config
 import json
 from ImageModel import ImageModel
 from Storage import Storage
+from ImageProcessor import ImageProcessor
+import time
 
 config = Config()
 imageModel = ImageModel(config.DB_URL)
@@ -48,13 +50,18 @@ class DefaultJobProcessor():
         data = job.data
         imageJob = ImageJob(data)
         print(f"Job Received : {imageJob.getMessage()}")
+        start=time.time()
         imageModel.updateImageJobStatus(imageJob.getImageId(), "processing")
         downloadPath = f"uploads/{imageJob.getUserId()}/{imageJob.getImageId()}/{imageJob.getImageName()}"
         uploadPath = f"resized/{imageJob.getUserId()}/{imageJob.getImageId()}/{imageJob.getImageName()}"
-        print(f"Downloading image from {downloadPath}")
         image =storage.download_image(downloadPath)
-        print(f"Uploading image to {uploadPath}")
-        storage.upload_image(uploadPath, image)
+        imageProcessor = ImageProcessor()
+        reducedImage = imageProcessor.reduceSize(image)
+        storage.upload_image(uploadPath, reducedImage)
+        end=time.time()
+        time_taken = end - start
+        print(f"Job Completed : {imageJob.getMessage()}, time_taken: {time_taken}")
+        imageModel.updateImageJobStatus(imageJob.getImageId(), "completed", time_taken)
         return "done"
 
 async def processJob(job: Any, job_token: Any) -> Any:
