@@ -61,7 +61,7 @@ class DefaultJobProcessor():
         end=time.time()
         time_taken = end - start
         print(f"Job Completed : {imageJob.getMessage()}, time_taken: {time_taken}")
-        imageModel.updateImageJobStatus(imageJob.getImageId(), "completed", time_taken)
+        imageModel.updateImageJobStatus(imageJob.getImageId(), "completed")
         return "done"
 
 async def processJob(job: Any, job_token: Any) -> Any:
