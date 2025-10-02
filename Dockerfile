@@ -22,8 +22,10 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libpng-dev \
     libtiff-dev \
-    libatlas-base-dev \
+    libopenblas-dev \
+    liblapack-dev \
     gfortran \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -53,7 +55,8 @@ RUN apt-get update && apt-get install -y \
     libjpeg62-turbo \
     libpng16-16 \
     libtiff5 \
-    libatlas3-base \
+    libopenblas0 \
+    liblapack3 \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
