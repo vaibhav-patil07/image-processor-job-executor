@@ -44,6 +44,22 @@ RUN /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 # Stage 2: Runtime stage with minimal dependencies
 FROM python:3.13-slim AS runtime
 
+# Install runtime dependencies required for OpenCV and other packages
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+    libgomp1 \
+    libpq5 \
+    libgfortran5 \
+    libopenblas0 \
+    libjpeg62-turbo \
+    libpng16-16t64 \
+    libtiff6 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Set working directory
 WORKDIR /app
 
