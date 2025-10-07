@@ -83,6 +83,7 @@ async def main(config: Config):
    
     worker = Worker(config.QUEUE_NAME, processJob, {"connection": config.REDIS_URL})
 
+    print("Worker started successfully.")
     # Wait until the shutdown event is set
     await shutdown_event.wait()
 
