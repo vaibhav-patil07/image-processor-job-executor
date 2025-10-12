@@ -1,5 +1,6 @@
 import psycopg
 from urllib.parse import urlparse, parse_qs
+from datetime import datetime
 
 
 def get_pg_connection(db_url: str):
@@ -54,6 +55,10 @@ class ImageModel:
     def get_image_by_id(self, image_id: str):
         self.cursor.execute("SELECT * FROM images WHERE image_id = %s", (image_id,))
         return self.cursor.fetchone()
-    def updateImageJobStatus(self, image_id: str, status: str):
-        self.cursor.execute("UPDATE images SET job_status = %s WHERE image_id = %s", (status, image_id))
+    def updateImageJobStatus(self, image_id: str, status: str, compressed_size: int = 0):
+        compressed_at = datetime.now()
+        if compressed_size != 0:
+            self.cursor.execute("UPDATE images SET job_status = %s, compressed_at = %s, compressed_size = %s WHERE image_id = %s", (status, compressed_at , compressed_size, image_id))
+        else:
+            self.cursor.execute("UPDATE images SET job_status = %s, compressed_at = %s WHERE image_id = %s", (status, compressed_at , image_id))
         self.conn.commit()

@@ -3,6 +3,9 @@ from cv2 import cvtColor, COLOR_BGR2GRAY, Laplacian, CV_64F, imencode,IMWRITE_JP
 from threading import Thread
 import time
 from BRISQUE import BRISQUE
+from RedisModel import RedisModel
+from ImageJob import ImageJob
+import json
 
 brisque = BRISQUE()
 
@@ -21,8 +24,9 @@ class ThreadWithReturnValue(Thread):
         return self._return
 
 class ImageProcessor:
-    def __init__(self):
-        pass
+    def __init__(self,redisModel: RedisModel, imageJob: ImageJob):
+        self.redisModel = redisModel
+        self.imageJob = imageJob
     def divideImage(self,img):
         divisions=[]
         row=img.shape[0]
@@ -82,8 +86,29 @@ class ImageProcessor:
         return np.mean(quality_score)
     def reduceSize(self, image):
         divisions = self.divideImage(image.copy())
+        self.redisModel.publish('image-processor-progress', json.dumps({
+            "image_id": self.imageJob.getImageId(),
+            "status": "processing",
+            "user_id": self.imageJob.getUserId(),
+            "filename": self.imageJob.getImageName(),
+            "progress": 30
+        }))
         blurriness_mat=self.getBlurrinessMatrix(image,divisions)
+        self.redisModel.publish('image-processor-progress', json.dumps({
+            "image_id": self.imageJob.getImageId(),
+            "status": "processing",
+            "user_id": self.imageJob.getUserId(),
+            "filename": self.imageJob.getImageName(),
+            "progress": 60
+        }))
         mean_quality=self.getQuality(blurriness_mat,image)
+        self.redisModel.publish('image-processor-progress', json.dumps({
+            "image_id": self.imageJob.getImageId(),
+            "status": "processing",
+            "user_id": self.imageJob.getUserId(),
+            "filename": self.imageJob.getImageName(),
+            "progress": 80
+        }))
         success, encoded_image = imencode('.jpeg', image, [IMWRITE_JPEG_QUALITY, int(mean_quality)])
         if success:
             return encoded_image

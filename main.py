@@ -10,38 +10,13 @@ from ImageModel import ImageModel
 from Storage import Storage
 from ImageProcessor import ImageProcessor
 import time
+from RedisModel import RedisModel
+from ImageJob import ImageJob
 
 config = Config()
 imageModel = ImageModel(config.DB_URL)
 storage = Storage(config)
-
-class ImageJob():
-    data: Dict[str, str]
-    def __init__(self, data: Dict[str, str]):
-        self.data = data
-        self.data['message'] = json.loads(data['message'])
-    def getPattern(self) -> str:
-        return self.data['pattern']
-    def getMessage(self) -> str:
-        return self.data['message']
-    def getImageId(self) -> str:
-        message = self.getMessage()
-        imageId = message['image_id']
-        return imageId
-    def getImageName(self) -> str:
-        message = self.getMessage()
-        imageName = message['filename']
-        return imageName
-    def getUserId(self) -> str:
-        message = self.getMessage()
-        userId = message['user_id']
-        return userId
-    def getMessageId(self) -> str:
-        message = self.getMessage()
-        messageId = message['message_id']
-        return messageId
-
-
+redisModel = RedisModel(config.REDIS_URL)
 
 class DefaultJobProcessor():
     def __init__(self, config: Config):
@@ -49,19 +24,49 @@ class DefaultJobProcessor():
     async def processJob(self, job: Any, job_token: Any) -> Any:
         data = job.data
         imageJob = ImageJob(data)
+        redisModel.publish('image-processor-progress', json.dumps({
+            "image_id": imageJob.getImageId(),
+            "status": "processing",
+            "user_id": imageJob.getUserId(),
+            "filename": imageJob.getImageName(),
+            "progress": 10
+            }
+        ))
         print(f"Job Received : {imageJob.getMessage()}")
         start=time.time()
         imageModel.updateImageJobStatus(imageJob.getImageId(), "processing")
         downloadPath = f"uploads/{imageJob.getUserId()}/{imageJob.getImageId()}/{imageJob.getImageName()}"
         uploadPath = f"resized/{imageJob.getUserId()}/{imageJob.getImageId()}/{imageJob.getImageName()}"
         image =storage.download_image(downloadPath)
-        imageProcessor = ImageProcessor()
+        redisModel.publish('image-processor-progress', json.dumps({
+            "image_id": imageJob.getImageId(),
+            "status": "processing",
+            "user_id": imageJob.getUserId(),
+            "filename": imageJob.getImageName(),
+            "progress": 20
+        }))
+        imageProcessor = ImageProcessor(redisModel, imageJob)
         reducedImage = imageProcessor.reduceSize(image)
+        reducedImageSize = reducedImage.nbytes
         storage.upload_image(uploadPath, reducedImage)
+        redisModel.publish('image-processor-progress', json.dumps({
+            "image_id": imageJob.getImageId(),
+            "status": "processing",
+            "user_id": imageJob.getUserId(),
+            "filename": imageJob.getImageName(),
+            "progress": 90
+        }))
         end=time.time()
         time_taken = end - start
         print(f"Job Completed : {imageJob.getMessage()}, time_taken: {time_taken}")
-        imageModel.updateImageJobStatus(imageJob.getImageId(), "completed")
+        imageModel.updateImageJobStatus(imageJob.getImageId(), "completed", reducedImageSize)
+        redisModel.publish('image-processor-progress', json.dumps({
+            "image_id": imageJob.getImageId(),
+            "status": "completed",
+            "user_id": imageJob.getUserId(),
+            "filename": imageJob.getImageName(),
+            "progress": 100
+        }))
         return "done"
 
 async def processJob(job: Any, job_token: Any) -> Any:
