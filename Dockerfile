@@ -86,6 +86,8 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 RUN chown -R appuser:appuser /app
 RUN chown -R appuser:appuser /opt/venv
 USER appuser
+# Expose the port (default 8080, but can be overridden via PORT env var)
+EXPOSE 8080
 
 # Health check to ensure Redis connection is available
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
