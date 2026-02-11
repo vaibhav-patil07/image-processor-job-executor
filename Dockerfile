@@ -98,4 +98,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD python -c "import redis; import os; r = redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379/0')); r.ping()" || exit 1
 
 # Run both the job processor and HTTP server
-CMD ["sh", "-c", "python main.py & python server.py & wait"]
+CMD ["sh", "-c", "python main.py"]
