@@ -38,8 +38,12 @@ RUN python -m venv /opt/venv
 RUN /opt/venv/bin/pip install --upgrade pip setuptools wheel
 
 # Copy requirements and install Python dependencies in virtual environment
+# Install packages with memory optimization flags
 COPY requirements.txt .
-RUN /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+RUN /opt/venv/bin/pip install --no-cache-dir --no-build-isolation \
+    -r requirements.txt && \
+    find /opt/venv -name "*.pyc" -delete && \
+    find /opt/venv -name "__pycache__" -type d -exec rm -rf {} + || true
 
 # Stage 2: Runtime stage with minimal dependencies
 FROM python:3.13-slim AS runtime
