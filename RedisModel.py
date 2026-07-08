@@ -13,9 +13,6 @@ class RedisModel:
         if not result:
             raise Exception("Redis connection failed")
         print("PubSub Redis connection established successfully...")
-        
-        # Start automatic ping in background thread
-        self._start_keepalive()
 
     def get_redis(self):
         return self.redis
